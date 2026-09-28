@@ -6,6 +6,45 @@ from app.database.dto import StatsSnapshot, WardogAccount, DiscordUser
 from app.database.functions import unlocks
 
 
+async def get(
+    session: AsyncSession,
+    account_id: int | None,
+    steam_id: int | None,
+    discord_id: int | None,
+    limit: int = 100,
+) -> list[PlayerStats]:
+    stmt = select(StatsSnapshot)
+    if account_id is not None:
+        stmt = stmt.filter(StatsSnapshot.account_id == account_id)
+    elif steam_id is not None:
+        stmt = stmt.filter(
+            StatsSnapshot.account.has(WardogAccount.steam_id == str(steam_id))
+        )
+    elif discord_id is not None:
+        stmt = stmt.filter(
+            StatsSnapshot.account.has(
+                WardogAccount.discord_users.any(DiscordUser.discord_id == discord_id)
+            )
+        )
+    stmt = stmt.order_by(StatsSnapshot.id.desc()).limit(limit)
+    res = (await session.execute(stmt)).scalars().all()
+
+    return [
+        PlayerStats(
+            player_data_version=item.player_data_version,
+            infantry=RoleStats(item.infantry_level, item.infantry_xp),
+            medic=RoleStats(item.medic_level, item.medic_xp),
+            recon=RoleStats(item.recon_level, item.recon_xp),
+            support=RoleStats(item.support_level, item.support_xp),
+            driver=RoleStats(item.driver_level, item.driver_xp),
+            pilot=RoleStats(item.pilot_level, item.pilot_xp),
+            cash=item.cash,
+            gold=item.gold,
+        )
+        for item in res
+    ]
+
+
 async def get_latest(
     session: AsyncSession,
     account_id: int | None,

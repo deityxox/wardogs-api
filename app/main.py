@@ -154,6 +154,28 @@ async def stats(
         return res
 
 
+@app.get(
+    "/snapshots",
+    summary="Get your previous stat snapshots via your, id, steam_id or discord_id",
+)
+async def snapshots(
+    id: int | None = Query(None, description="Id of the user"),
+    steam_id: int | None = Query(None, description="Steam id of the user"),
+    discord_id: int | None = Query(None, description="Discord id of the user"),
+    limit: int = Query(
+        10, ge=1, le=200, description="Max amount of snapshots to return"
+    ),
+) -> list[PlayerStats]:
+    if id is None and steam_id is None and discord_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="You need to send the id, steam_id or discord_id of a user",
+        )
+    async with db.create_session() as session:
+        res = await stats_snapshot.get(session, id, steam_id, discord_id, limit)
+        return res
+
+
 def return_error(redirect_url: str, error: str, status_code: int):
     if redirect_url != "":
         url_parts = list(urlparse.urlparse(redirect_url))
