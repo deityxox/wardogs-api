@@ -1,11 +1,13 @@
 import logging
 from logging.config import dictConfig
+import os
 import time
 import urllib.parse as urlparse
 from urllib.parse import urlencode
 import aiohttp
 import jwt
 import traceback
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.concurrency import asynccontextmanager
 from fastapi.responses import RedirectResponse
@@ -22,6 +24,7 @@ dictConfig(LogConfig().model_dump())
 logger = logging.getLogger("api")
 logger.addFilter(PackagePathFilter())
 
+DEBUG_MODE = os.getenv("DEBUG", "false")
 env_config = load_config()
 
 db = DatabaseSingleton(env_config.db)
@@ -44,7 +47,36 @@ async def lifespan(app: FastAPI):
     await steam_web_client.session.close()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Wardogs player stats API",
+    description='This is a instance of <a href="https://github.com/community-network/wardogs-api" target="_blank">https://github.com/community-network/wardogs-api</a><br/>'
+    "You can callback from gathering new stats from /update to your own website directly, even for failed requests with ?redirect_url=<br />"
+    'This project also has a connection with a Discord bot, to get the stats visible within Discord you can use <a href="https://discord.com/oauth2/authorize?client_id=1550222563047637002" target="_blank">https://discord.com/oauth2/authorize?client_id=1550222563047637002</a>, it has the public repository available at <a href="https://github.com/community-network/wardogs-bot" target="_blank">https://github.com/community-network/wardogs-bot</a>',
+    version="1.0.0",
+    debug=DEBUG_MODE == "true",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["GET"],
+    allow_headers=[
+        "Access-Control-Allow-Headers",
+        "Origin",
+        "Accept",
+        "X-Requested-With",
+        "Content-Type",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+        "Access-Control-Allow-Origin",
+        "Access-Control-Allow-MethodsAuthorization",
+        "X-Amz-Date",
+        "X-Api-Key",
+        "X-Amz-Security-Token",
+    ],
+)
 
 
 @app.get("/", include_in_schema=False)
