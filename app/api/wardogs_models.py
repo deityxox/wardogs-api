@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import datetime
 
 from pydantic import computed_field
 
@@ -30,6 +31,7 @@ class PlayerStats:
     gold: int = 0
 
     unlocks: list[UnlockInfo] = field(default_factory=list)
+    created_at: str | None = None
 
     @computed_field
     @property

@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime, timezone
 import json
 
 import aiohttp
@@ -115,7 +116,8 @@ class SteamClient(metaclass=Singleton):
         raw_version = player_data.get("version")
 
         stats = PlayerStats(
-            player_data_version=(int(raw_version) if raw_version is not None else None)
+            player_data_version=(int(raw_version) if raw_version is not None else None),
+            created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
 
         entities = player_data.get("entities", [])

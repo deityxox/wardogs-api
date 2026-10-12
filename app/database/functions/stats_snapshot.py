@@ -40,6 +40,7 @@ async def get(
             pilot=RoleStats(item.pilot_level, item.pilot_xp),
             cash=item.cash,
             gold=item.gold,
+            created_at=item.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
         for item in res
     ]
@@ -83,6 +84,7 @@ async def get_latest(
         cash=res.cash,
         gold=res.gold,
         unlocks=cur_unlocks,
+        created_at=res.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
     )
 
 
